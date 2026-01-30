@@ -3,59 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>最大立方体シミュレーター V7 (iPad最適化)</title>
+    <title>最大立方体シミュレーター V9 (判定アシスト吸着)</title>
     <style>
-        body { 
-            font-family: sans-serif; 
-            background: #eef2f3; 
-            margin: 0; 
-            padding: 10px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh;
-            overflow: hidden; /* スクロールを防いで一目で見えるように */
-        }
-        .main-wrapper {
-            display: flex;
-            flex-direction: row; /* 横並び */
-            background: white;
-            padding: 15px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            gap: 20px;
-            max-width: 98vw;
-            max-height: 95vh;
-        }
-        .canvas-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        canvas { 
-            background: white; 
-            border: 2px solid #333; 
-            cursor: grab; 
-            touch-action: none; 
-            border-radius: 8px;
-            max-width: 65vw; /* キャンバスが大きすぎないよう調整 */
-            max-height: 80vh;
-        }
-        .controls { 
-            width: 300px; /* 操作パネルの幅を固定 */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        h1 { font-size: 1.2rem; margin: 0 0 10px 0; color: #333; text-align: center; }
-        .slider-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 3px; font-weight: bold; color: #555; font-size: 0.9rem; }
-        select, input[type="range"] { width: 100%; margin-bottom: 5px; }
-        .status-box { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem; border: 2px solid transparent; }
-        .ok { background: #e8f5e9; color: #2e7d32; border-color: #2e7d32; }
+        body { font-family: sans-serif; background: #eef2f3; margin: 0; padding: 10px; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .main-wrapper { display: flex; flex-direction: row; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); gap: 25px; max-width: 98vw; max-height: 95vh; }
+        .canvas-container { display: flex; flex-direction: column; align-items: center; }
+        canvas { background: white; border: 2px solid #333; cursor: grab; touch-action: none; border-radius: 8px; max-width: 60vw; max-height: 80vh; }
+        .controls { width: 320px; display: flex; flex-direction: column; justify-content: flex-start; }
+        h1 { font-size: 1.2rem; margin: 0 0 15px 0; color: #333; text-align: center; }
+        .slider-group { margin-bottom: 20px; }
+        .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        label { font-weight: bold; color: #555; font-size: 0.95rem; }
+        .num-input { width: 75px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; text-align: center; font-weight: bold; color: #1976d2; }
+        select, input[type="range"] { width: 100%; }
+        .status-box { padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; border: 2px solid transparent; margin-bottom: 10px; transition: all 0.2s; }
+        .ok { background: #e8f5e9; color: #2e7d32; border-color: #2e7d32; box-shadow: 0 0 15px rgba(46, 125, 50, 0.3); }
         .ng { background: #ffebee; color: #c62828; border-color: #c62828; }
-        .info { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; border-left: 4px solid #1976d2; }
-        .snap-indicator { color: #ffa726; font-weight: bold; font-size: 0.8rem; text-align: center; height: 1.2rem; }
+        .info { background: #f9f9f9; padding: 12px; border-radius: 8px; font-size: 0.9rem; border-left: 5px solid #1976d2; line-height: 1.5; }
+        .snap-indicator { color: #2e7d32; font-weight: bold; font-size: 0.85rem; text-align: center; height: 1.5rem; margin-top: 5px; visibility: hidden; }
+        .snap-active { visibility: visible; }
     </style>
 </head>
 <body>
@@ -64,39 +30,40 @@
         <div class="canvas-container">
             <h1>最強の展開図を探せ！</h1>
             <canvas id="canvas" width="600" height="600"></canvas>
-            <div id="snapLabel" class="snap-indicator"></div>
+            <div id="snapLabel" class="snap-indicator">✨ 枠内にピタッと収まりました！</div>
         </div>
 
         <div class="controls">
             <div class="slider-group">
-                <label>紙のサイズ</label>
+                <label>1. 紙のサイズ</label>
                 <select id="paperType">
                     <option value="10,10">10cm × 10cm</option>
                     <option value="20,20">20cm × 20cm</option>
                     <option value="20,10">20cm × 10cm</option>
                 </select>
             </div>
-
             <div class="slider-group">
-                <label>展開図の形</label>
+                <label>2. 展開図の形</label>
                 <select id="netType"></select>
             </div>
-
             <div class="slider-group">
-                <label>1辺: <span id="sideLenVal">2.50</span> cm</label>
+                <div class="label-row">
+                    <label>3. 1辺の長さ (cm)</label>
+                    <input type="number" id="sideLenNum" class="num-input" min="1" max="6.5" step="0.01" value="2.50">
+                </div>
                 <input type="range" id="sideLen" min="1" max="6.5" step="0.01" value="2.5">
             </div>
-
             <div class="slider-group">
-                <label>回転: <span id="angleVal">0</span>°</label>
+                <div class="label-row">
+                    <label>4. 回転角度 (度)</label>
+                    <input type="number" id="angleNum" class="num-input" min="0" max="360" step="1" value="0">
+                </div>
                 <input type="range" id="angle" min="0" max="360" step="1" value="0">
             </div>
-
             <div id="status" class="status-box ok">判定: OK</div>
-            
             <div class="info">
-                体積: <strong><span id="volume">15.63</span> cm³</strong><br>
-                ※ドラッグで移動、角度0°付近で吸着
+                現在の体積: <strong><span id="volume">15.63</span> cm³</strong><br>
+                <small>※「惜しい」位置で自動的に枠内に吸着します。</small>
             </div>
         </div>
     </div>
@@ -104,9 +71,8 @@
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-let paperW = 10, paperH = 10;
-let SCALE = 40;
-const SNAP_THRESHOLD = 8;
+let paperW = 10, paperH = 10, SCALE = 40;
+const SNAP_PIXELS = 10; // 吸着感度
 
 const nets = {
     "1-4-1型 (十字)": [[0,-1],[0,0],[0,1],[0,2],[-1,0],[1,0]],
@@ -126,84 +92,97 @@ Object.keys(nets).forEach(key => {
 let posX = canvas.width / 2, posY = canvas.height / 2;
 let isDragging = false;
 
+const elSideNum = document.getElementById('sideLenNum');
+const elSideSlider = document.getElementById('sideLen');
+const elAngleNum = document.getElementById('angleNum');
+const elAngleSlider = document.getElementById('angle');
+
 function draw() {
     [paperW, paperH] = document.getElementById('paperType').value.split(',').map(Number);
-    const s = parseFloat(document.getElementById('sideLen').value);
-    const angleDeg = parseInt(document.getElementById('angle').value);
+    const s = parseFloat(elSideNum.value);
+    const angleDeg = parseInt(elAngleNum.value);
     const a = angleDeg * Math.PI / 180;
     const net = nets[selectNet.value];
 
-    // iPadの画面サイズに合わせた動的なスケール調整
     const maxCanvasDim = Math.min(canvas.width, canvas.height);
     SCALE = (paperW > 10 || paperH > 10) ? (maxCanvasDim / 28) : (maxCanvasDim / 14);
-    
     const offsetX = (canvas.width - paperW * SCALE) / 2;
     const offsetY = (canvas.height - paperH * SCALE) / 2;
 
-    document.getElementById('sideLenVal').textContent = s.toFixed(2);
-    document.getElementById('angleVal').textContent = angleDeg;
     document.getElementById('volume').textContent = Math.pow(s, 3).toFixed(2);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // --- 判定アシスト吸着ロジック ---
+    let bestX = posX, bestY = posY;
+    let minOut = Infinity;
 
-    // 紙と方眼
+    const checkOutAmount = (tx, ty) => {
+        let maxL = 0, maxR = 0, maxT = 0, maxB = 0;
+        net.forEach(square => {
+            [[0,0],[1,0],[1,1],[0,1]].forEach(corner => {
+                const rx = (square[0] + corner[0]) * s * SCALE;
+                const ry = (square[1] + corner[1]) * s * SCALE;
+                const fx = rx * Math.cos(a) - ry * Math.sin(a) + tx;
+                const fy = rx * Math.sin(a) + ry * Math.cos(a) + ty;
+                maxL = Math.max(maxL, offsetX - fx);
+                maxR = Math.max(maxR, fx - (offsetX + paperW * SCALE));
+                maxT = Math.max(maxT, offsetY - fy);
+                maxB = Math.max(maxB, fy - (offsetY + paperH * SCALE));
+            });
+        });
+        return {l: maxL, r: maxR, t: maxT, b: maxB, total: Math.max(0, maxL) + Math.max(0, maxR) + Math.max(0, maxT) + Math.max(0, maxB)};
+    };
+
+    // 現在の位置のはみ出し量
+    let currentOut = checkOutAmount(posX, posY);
+    
+    // もし「あと少しで入る」なら座標を補正
+    if (currentOut.total > 0 && currentOut.total < SNAP_PIXELS) {
+        if (currentOut.l > 0) posX += currentOut.l;
+        if (currentOut.r > 0) posX -= currentOut.r;
+        if (currentOut.t > 0) posY += currentOut.t;
+        if (currentOut.b > 0) posY -= currentOut.b;
+    }
+    
+    // 最終判定
+    let finalOut = checkOutAmount(posX, posY);
+    let isOK = finalOut.total <= 0.1;
+
+    // --- 描画開始 ---
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
     ctx.strokeRect(offsetX, offsetY, paperW * SCALE, paperH * SCALE);
     ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
     for(let i=0; i<=paperW; i++){ ctx.beginPath(); ctx.moveTo(offsetX+i*SCALE, offsetY); ctx.lineTo(offsetX+i*SCALE, offsetY+paperH*SCALE); ctx.stroke(); }
     for(let j=0; j<=paperH; j++){ ctx.beginPath(); ctx.moveTo(offsetX, offsetY+j*SCALE); ctx.lineTo(offsetX+paperW*SCALE, offsetY+j*SCALE); ctx.stroke(); }
 
-    // スナップ処理
-    let isSnapped = false;
-    if (angleDeg % 90 === 0) {
-        let minDiffX = Infinity, minDiffY = Infinity;
-        net.forEach(square => {
-            [[0,0],[1,0],[1,1],[0,1]].forEach(corner => {
-                const rx = (square[0] + corner[0]) * s * SCALE;
-                const ry = (square[1] + corner[1]) * s * SCALE;
-                const curX = rx * Math.cos(a) - ry * Math.sin(a) + posX;
-                const curY = rx * Math.sin(a) + ry * Math.cos(a) + posY;
-                for(let i=0; i<=paperW; i++){ let gx=offsetX+i*SCALE; if(Math.abs(curX-gx)<SNAP_THRESHOLD && Math.abs(curX-gx)<Math.abs(minDiffX)) minDiffX=gx-curX; }
-                for(let j=0; j<=paperH; j++){ let gy=offsetY+j*SCALE; if(Math.abs(curY-gy)<SNAP_THRESHOLD && Math.abs(curY-gy)<Math.abs(minDiffY)) minDiffY=gy-curY; }
-            });
-        });
-        if(Math.abs(minDiffX) < SNAP_THRESHOLD) { posX += minDiffX; isSnapped = true; }
-        if(Math.abs(minDiffY) < SNAP_THRESHOLD) { posY += minDiffY; isSnapped = true; }
-    }
-    document.getElementById('snapLabel').textContent = isSnapped ? "✨ ピタッと吸着中" : "";
-
-    // 判定
-    let isOut = false;
-    net.forEach(square => {
-        [[0,0],[1,0],[1,1],[0,1]].forEach(corner => {
-            const rx = (square[0] + corner[0]) * s * SCALE;
-            const ry = (square[1] + corner[1]) * s * SCALE;
-            const finalX = rx * Math.cos(a) - ry * Math.sin(a) + posX;
-            const finalY = rx * Math.sin(a) + ry * Math.cos(a) + posY;
-            if (finalX < offsetX - 0.5 || finalX > offsetX + paperW * SCALE + 0.5 ||
-                finalY < offsetY - 0.5 || finalY > offsetY + paperH * SCALE + 0.5) isOut = true;
-        });
-    });
-
-    // 描画
     ctx.save();
     ctx.translate(posX, posY); ctx.rotate(a);
-    ctx.fillStyle = isOut ? 'rgba(244,67,54,0.5)' : 'rgba(33,150,243,0.5)';
-    ctx.strokeStyle = isOut ? '#d32f2f' : '#1976d2';
+    ctx.fillStyle = isOK ? 'rgba(33, 150, 243, 0.5)' : 'rgba(244, 67, 54, 0.5)';
+    ctx.strokeStyle = isOK ? '#1976d2' : '#d32f2f';
     net.forEach(sq => { ctx.fillRect(sq[0]*s*SCALE, sq[1]*s*SCALE, s*SCALE, s*SCALE); ctx.strokeRect(sq[0]*s*SCALE, sq[1]*s*SCALE, s*SCALE, s*SCALE); });
     ctx.restore();
 
     const st = document.getElementById('status');
-    st.textContent = isOut ? "判定: はみ出し" : "判定: OK";
-    st.className = "status-box " + (isOut ? "ng" : "ok");
+    const label = document.getElementById('snapLabel');
+    st.textContent = isOK ? "判定: OK" : "判定: はみ出し";
+    st.className = "status-box " + (isOK ? "ok" : "ng");
+    label.className = "snap-indicator " + (isOK && currentOut.total > 0 ? "snap-active" : "");
 }
+
+// 同期処理
+const sync = (a, b) => { a.value = b.value; draw(); };
+elSideSlider.addEventListener('input', () => sync(elSideNum, elSideSlider));
+elSideNum.addEventListener('input', () => sync(elSideSlider, elSideNum));
+elAngleSlider.addEventListener('input', () => sync(elAngleNum, elAngleSlider));
+elAngleNum.addEventListener('input', () => sync(elAngleSlider, elAngleNum));
+document.getElementById('paperType').addEventListener('change', draw);
+selectNet.addEventListener('change', draw);
 
 function updatePos(e) {
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-    posX = clientX - rect.left;
-    posY = clientY - rect.top;
+    const cx = (e.clientX || (e.touches && e.touches[0].clientX));
+    const cy = (e.clientY || (e.touches && e.touches[0].clientY));
+    posX = cx - rect.left; posY = cy - rect.top;
     draw();
 }
 
@@ -212,9 +191,6 @@ window.addEventListener('mouseup', () => isDragging = false);
 canvas.addEventListener('mousemove', (e) => { if(isDragging) updatePos(e); });
 canvas.addEventListener('touchstart', (e) => { isDragging = true; updatePos(e); e.preventDefault(); }, {passive:false});
 canvas.addEventListener('touchmove', (e) => { if(isDragging) updatePos(e); e.preventDefault(); }, {passive:false});
-canvas.addEventListener('touchend', () => isDragging = false);
-document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', draw));
-window.addEventListener('resize', draw);
 draw();
 </script>
 </body>
