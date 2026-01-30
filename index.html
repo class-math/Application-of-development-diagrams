@@ -2,60 +2,101 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>最大立方体シミュレーター V6 (完全版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最大立方体シミュレーター V7 (iPad最適化)</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #eef2f3; margin: 0; padding: 20px; }
-        .container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
-        canvas { background: white; border: 3px solid #333; cursor: grab; touch-action: none; border-radius: 4px; }
-        canvas:active { cursor: grabbing; }
-        .controls { background: white; padding: 20px; border-radius: 12px; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .slider-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #444; }
-        select, input[type="range"] { width: 100%; margin-bottom: 10px; }
-        .status-box { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; margin-top: 10px; border: 2px solid transparent; }
+        body { 
+            font-family: sans-serif; 
+            background: #eef2f3; 
+            margin: 0; 
+            padding: 10px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+            overflow: hidden; /* スクロールを防いで一目で見えるように */
+        }
+        .main-wrapper {
+            display: flex;
+            flex-direction: row; /* 横並び */
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            gap: 20px;
+            max-width: 98vw;
+            max-height: 95vh;
+        }
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas { 
+            background: white; 
+            border: 2px solid #333; 
+            cursor: grab; 
+            touch-action: none; 
+            border-radius: 8px;
+            max-width: 65vw; /* キャンバスが大きすぎないよう調整 */
+            max-height: 80vh;
+        }
+        .controls { 
+            width: 300px; /* 操作パネルの幅を固定 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        h1 { font-size: 1.2rem; margin: 0 0 10px 0; color: #333; text-align: center; }
+        .slider-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 3px; font-weight: bold; color: #555; font-size: 0.9rem; }
+        select, input[type="range"] { width: 100%; margin-bottom: 5px; }
+        .status-box { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.1rem; border: 2px solid transparent; }
         .ok { background: #e8f5e9; color: #2e7d32; border-color: #2e7d32; }
         .ng { background: #ffebee; color: #c62828; border-color: #c62828; }
-        .snap-info { background: #fff9c4; padding: 8px; font-size: 0.85em; border-radius: 5px; margin-bottom: 10px; border: 1px solid #fbc02d; }
+        .info { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; border-left: 4px solid #1976d2; }
+        .snap-indicator { color: #ffa726; font-weight: bold; font-size: 0.8rem; text-align: center; height: 1.2rem; }
     </style>
 </head>
 <body>
 
-    <h1>最強の展開図を探せ！V6</h1>
-    
-    <div class="container">
-        <canvas id="canvas" width="600" height="600"></canvas>
+    <div class="main-wrapper">
+        <div class="canvas-container">
+            <h1>最強の展開図を探せ！</h1>
+            <canvas id="canvas" width="600" height="600"></canvas>
+            <div id="snapLabel" class="snap-indicator"></div>
+        </div>
 
         <div class="controls">
-            <div class="snap-info">💡 角度が0°/90°/180°/270°のとき、方眼にピタッと吸着します！</div>
-            
             <div class="slider-group">
-                <label>1. 紙のサイズを選択:</label>
+                <label>紙のサイズ</label>
                 <select id="paperType">
                     <option value="10,10">10cm × 10cm</option>
                     <option value="20,20">20cm × 20cm</option>
-                    <option value="20,10">20cm × 10cm (横長)</option>
+                    <option value="20,10">20cm × 10cm</option>
                 </select>
             </div>
 
             <div class="slider-group">
-                <label>2. 展開図の形:</label>
+                <label>展開図の形</label>
                 <select id="netType"></select>
             </div>
 
             <div class="slider-group">
-                <label>3. 1辺の長さ: <span id="sideLenVal">2.50</span> cm</label>
+                <label>1辺: <span id="sideLenVal">2.50</span> cm</label>
                 <input type="range" id="sideLen" min="1" max="6.5" step="0.01" value="2.5">
             </div>
 
             <div class="slider-group">
-                <label>4. 回転角度: <span id="angleVal">0</span>°</label>
+                <label>回転: <span id="angleVal">0</span>°</label>
                 <input type="range" id="angle" min="0" max="360" step="1" value="0">
             </div>
 
             <div id="status" class="status-box ok">判定: OK</div>
             
-            <div style="margin-top:15px; font-size: 1.1em;">
-                現在の体積: <strong><span id="volume">15.63</span> cm³</strong>
+            <div class="info">
+                体積: <strong><span id="volume">15.63</span> cm³</strong><br>
+                ※ドラッグで移動、角度0°付近で吸着
             </div>
         </div>
     </div>
@@ -65,7 +106,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let paperW = 10, paperH = 10;
 let SCALE = 40;
-const SNAP_THRESHOLD = 8; // 吸着感度
+const SNAP_THRESHOLD = 8;
 
 const nets = {
     "1-4-1型 (十字)": [[0,-1],[0,0],[0,1],[0,2],[-1,0],[1,0]],
@@ -84,7 +125,6 @@ Object.keys(nets).forEach(key => {
 
 let posX = canvas.width / 2, posY = canvas.height / 2;
 let isDragging = false;
-let isSnapped = false;
 
 function draw() {
     [paperW, paperH] = document.getElementById('paperType').value.split(',').map(Number);
@@ -93,7 +133,10 @@ function draw() {
     const a = angleDeg * Math.PI / 180;
     const net = nets[selectNet.value];
 
-    SCALE = (paperW > 10 || paperH > 10) ? 25 : 45;
+    // iPadの画面サイズに合わせた動的なスケール調整
+    const maxCanvasDim = Math.min(canvas.width, canvas.height);
+    SCALE = (paperW > 10 || paperH > 10) ? (maxCanvasDim / 28) : (maxCanvasDim / 14);
+    
     const offsetX = (canvas.width - paperW * SCALE) / 2;
     const offsetY = (canvas.height - paperH * SCALE) / 2;
 
@@ -103,15 +146,15 @@ function draw() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 紙と方眼の描画
+    // 紙と方眼
     ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
     ctx.strokeRect(offsetX, offsetY, paperW * SCALE, paperH * SCALE);
     ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
     for(let i=0; i<=paperW; i++){ ctx.beginPath(); ctx.moveTo(offsetX+i*SCALE, offsetY); ctx.lineTo(offsetX+i*SCALE, offsetY+paperH*SCALE); ctx.stroke(); }
     for(let j=0; j<=paperH; j++){ ctx.beginPath(); ctx.moveTo(offsetX, offsetY+j*SCALE); ctx.lineTo(offsetX+paperW*SCALE, offsetY+j*SCALE); ctx.stroke(); }
 
-    // スナップ計算（直角回転時のみ）
-    isSnapped = false;
+    // スナップ処理
+    let isSnapped = false;
     if (angleDeg % 90 === 0) {
         let minDiffX = Infinity, minDiffY = Infinity;
         net.forEach(square => {
@@ -120,22 +163,16 @@ function draw() {
                 const ry = (square[1] + corner[1]) * s * SCALE;
                 const curX = rx * Math.cos(a) - ry * Math.sin(a) + posX;
                 const curY = rx * Math.sin(a) + ry * Math.cos(a) + posY;
-
-                for(let i=0; i<=paperW; i++) {
-                    let gx = offsetX + i*SCALE;
-                    if(Math.abs(curX - gx) < SNAP_THRESHOLD && Math.abs(curX - gx) < Math.abs(minDiffX)) minDiffX = gx - curX;
-                }
-                for(let j=0; j<=paperH; j++) {
-                    let gy = offsetY + j*SCALE;
-                    if(Math.abs(curY - gy) < SNAP_THRESHOLD && Math.abs(curY - gy) < Math.abs(minDiffY)) minDiffY = gy - curY;
-                }
+                for(let i=0; i<=paperW; i++){ let gx=offsetX+i*SCALE; if(Math.abs(curX-gx)<SNAP_THRESHOLD && Math.abs(curX-gx)<Math.abs(minDiffX)) minDiffX=gx-curX; }
+                for(let j=0; j<=paperH; j++){ let gy=offsetY+j*SCALE; if(Math.abs(curY-gy)<SNAP_THRESHOLD && Math.abs(curY-gy)<Math.abs(minDiffY)) minDiffY=gy-curY; }
             });
         });
         if(Math.abs(minDiffX) < SNAP_THRESHOLD) { posX += minDiffX; isSnapped = true; }
         if(Math.abs(minDiffY) < SNAP_THRESHOLD) { posY += minDiffY; isSnapped = true; }
     }
+    document.getElementById('snapLabel').textContent = isSnapped ? "✨ ピタッと吸着中" : "";
 
-    // はみ出し判定
+    // 判定
     let isOut = false;
     net.forEach(square => {
         [[0,0],[1,0],[1,1],[0,1]].forEach(corner => {
@@ -148,21 +185,12 @@ function draw() {
         });
     });
 
-    // スナップ時のガイド枠描画
-    if(isSnapped) {
-        ctx.strokeStyle = '#ffa726'; ctx.lineWidth = 3;
-        ctx.strokeRect(offsetX, offsetY, paperW * SCALE, paperH * SCALE);
-    }
-
-    // 展開図描画
+    // 描画
     ctx.save();
     ctx.translate(posX, posY); ctx.rotate(a);
     ctx.fillStyle = isOut ? 'rgba(244,67,54,0.5)' : 'rgba(33,150,243,0.5)';
     ctx.strokeStyle = isOut ? '#d32f2f' : '#1976d2';
-    net.forEach(sq => {
-        ctx.fillRect(sq[0]*s*SCALE, sq[1]*s*SCALE, s*SCALE, s*SCALE);
-        ctx.strokeRect(sq[0]*s*SCALE, sq[1]*s*SCALE, s*SCALE, s*SCALE);
-    });
+    net.forEach(sq => { ctx.fillRect(sq[0]*s*SCALE, sq[1]*s*SCALE, s*SCALE, s*SCALE); ctx.strokeRect(sq[0]*s*SCALE, sq[1]*s*SCALE, s*SCALE, s*SCALE); });
     ctx.restore();
 
     const st = document.getElementById('status');
@@ -172,8 +200,10 @@ function draw() {
 
 function updatePos(e) {
     const rect = canvas.getBoundingClientRect();
-    posX = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-    posY = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    posX = clientX - rect.left;
+    posY = clientY - rect.top;
     draw();
 }
 
@@ -184,6 +214,7 @@ canvas.addEventListener('touchstart', (e) => { isDragging = true; updatePos(e); 
 canvas.addEventListener('touchmove', (e) => { if(isDragging) updatePos(e); e.preventDefault(); }, {passive:false});
 canvas.addEventListener('touchend', () => isDragging = false);
 document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', draw));
+window.addEventListener('resize', draw);
 draw();
 </script>
 </body>
